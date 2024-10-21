@@ -18,7 +18,7 @@ population_configurations = [
 
 # Add instantaneous bottleneck event and migration events
 demographic_events = [
-    msprime.PopulationParametersChange(time=20, initial_size=500, population_id=0),  # Change in population size
+    msprime.PopulationParametersChange(time=20, initial_size=200, population_id=0),  # Change in population size
     msprime.InstantaneousBottleneck(time=30, population=0, strength=0.5),  # Instantaneous bottleneck event
     msprime.MassMigration(time=t_admixture, source=0, destination=1, proportion=proportion_admixture),
     msprime.MassMigration(time=t_divergence, source=0, destination=1, proportion=1.0),

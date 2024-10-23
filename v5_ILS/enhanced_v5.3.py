@@ -1,10 +1,15 @@
 # Enhanced script for simulating gene genealogies under a coalescent model
 # with recombination, incomplete lineage sorting (ILS), and introgression events
-# using msprime 1.x.
+# using msprime 1.x, including parameter sampling, parallelization, and advanced analysis.
 
 import msprime
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
+from concurrent.futures import ProcessPoolExecutor
+import random
+import logging
+import os
 
 def simulate_genomes(
     recombination_rate,
@@ -12,8 +17,8 @@ def simulate_genomes(
     length,
     samples,
     demography,
-    introgression_events=None,
-    random_seed=None
+    introgression_event,
+    random_seed
 ):
     """
     Simulate genomes under a complex demographic model with recombination.
@@ -24,28 +29,27 @@ def simulate_genomes(
         length (int): Length of the simulated genome in base pairs.
         samples (list): List of msprime.SampleSet objects specifying samples to be taken.
         demography (msprime.Demography): Demography object defining populations and events.
-        introgression_events (list): List of dictionaries specifying introgression events.
+        introgression_event (dict): Dictionary specifying introgression event.
         random_seed (int): Seed for random number generator.
 
     Returns:
         ts (msprime.TreeSequence): Simulated tree sequence.
     """
-    if introgression_events is None:
-        introgression_events = []
-
-    # Add introgression events as mass migrations
-    for event in introgression_events:
-        demography.add_mass_migration(
-            time=event['time'],
-            source=event['recipient'],
-            dest=event['donor'],
-            proportion=event['proportion']
-        )
+    # Create a copy of the demography to avoid modifying the original
+    demography_sim = demography.copy()
+    
+    # Add introgression event as mass migration
+    demography_sim.add_mass_migration(
+        time=introgression_event['time'],
+        source=introgression_event['recipient'],
+        dest=introgression_event['donor'],
+        proportion=introgression_event['proportion']
+    )
 
     # Simulate ancestry with msprime
     ts = msprime.sim_ancestry(
         samples=samples,
-        demography=demography,
+        demography=demography_sim,
         recombination_rate=recombination_rate,
         sequence_length=length,
         random_seed=random_seed
@@ -60,41 +64,76 @@ def simulate_genomes(
 
     return ts
 
-def main():
-    # Simulation parameters
-    demography = msprime.Demography()
-    demography.add_population(name="Species_A", initial_size=10000)
-    demography.add_population(name="Species_B", initial_size=10000)
-    demography.add_population(name="Outgroup", initial_size=10000)
+def analyze_simulation(ts, demography):
+    """
+    Analyze the tree sequence to compute F_ST and D-statistics.
 
-    # Species split
-    demography.add_population_split(
-        time=5000,
-        derived=["Species_A", "Species_B"],
-        ancestral="Outgroup"
-    )
+    Args:
+        ts (msprime.TreeSequence): Simulated tree sequence.
+        demography (msprime.Demography): Demography object to map populations.
 
-    # Split between Species_A and Species_B
-    demography.add_population_split(
-        time=2000,
-        derived=["Species_B"],
-        ancestral="Species_A"
-    )
+    Returns:
+        results (dict): Dictionary containing analysis results.
+    """
+    # Get sample indices for each population
+    pop_ids = {pop.name: pop.id for pop in demography.populations}
+    samples_A = ts.samples(population=pop_ids["Species_A"])
+    samples_B = ts.samples(population=pop_ids["Species_B"])
+    samples_O1 = ts.samples(population=pop_ids["Outgroup"])
+    samples_O2 = ts.samples(population=pop_ids["Outgroup2"])
 
-    # Introgression events
-    introgression_events = [
-        {'time': 1500, 'donor': "Species_B", 'recipient': "Species_A", 'proportion': 0.1}
-    ]
+    # Calculate F_ST between Species_A and Species_B
+    FST = ts.Fst([samples_A, samples_B])
 
-    recombination_rate = 1e-8  # Per base pair per generation
-    mutation_rate = 1e-8       # Per base pair per generation
-    length = 1e7               # Length of the genome in base pairs
+    # Compute D-statistics
+    import allel
+    # Extract genotype matrix
+    G = ts.genotype_matrix().T  # Shape (num_samples, num_sites)
 
-    samples = [
-        msprime.SampleSet(5, population="Species_A", time=0),
-        msprime.SampleSet(5, population="Species_B", time=0),
-        msprime.SampleSet(5, population="Outgroup", time=0)
-    ]
+    # Prepare allele counts per population
+    haplotypes = G
+    ac1 = haplotypes[:, samples_A].sum(axis=1)
+    ac2 = haplotypes[:, samples_B].sum(axis=1)
+    ac3 = haplotypes[:, samples_O1].sum(axis=1)
+    ac4 = haplotypes[:, samples_O2].sum(axis=1)
+
+    # Filter biallelic sites
+    biallelic_mask = (ac1 + ac2 + ac3 + ac4 <= 2 * len(samples_A) + 2 * len(samples_B) + 2 * len(samples_O1) + 2 * len(samples_O2))
+    ac1 = ac1[biallelic_mask]
+    ac2 = ac2[biallelic_mask]
+    ac3 = ac3[biallelic_mask]
+    ac4 = ac4[biallelic_mask]
+
+    # Compute D-statistic
+    num = np.sum((ac1 - ac2) * (ac3 - ac4))
+    den = np.sum((ac1 + ac2) * (ac3 + ac4))
+    D = num / den if den != 0 else np.nan
+
+    results = {
+        'FST': FST,
+        'D_statistic': D
+    }
+
+    return results
+
+def simulation_worker(sim_id, params):
+    """
+    Worker function to run a single simulation and analysis.
+
+    Args:
+        sim_id (int): Simulation identifier.
+        params (dict): Dictionary of parameters for the simulation.
+
+    Returns:
+        results (dict): Dictionary containing simulation ID, parameters, and analysis results.
+    """
+    random_seed = params['random_seed']
+    recombination_rate = params['recombination_rate']
+    mutation_rate = params['mutation_rate']
+    length = params['length']
+    introgression_event = params['introgression_event']
+    demography = params['demography']
+    samples = params['samples']
 
     # Run the simulation
     ts = simulate_genomes(
@@ -103,87 +142,161 @@ def main():
         length=length,
         samples=samples,
         demography=demography,
-        introgression_events=introgression_events,
-        random_seed=42
+        introgression_event=introgression_event,
+        random_seed=random_seed
     )
 
-    # Analyze the results
-    # Calculate Site Frequency Spectrum
-    sfs = ts.allele_frequency_spectrum(mode="site", polarized=False)
-    print("Site Frequency Spectrum:")
-    print(sfs)
+    # Analyze the simulation
+    analysis_results = analyze_simulation(ts, demography)
 
-    # Plot the Site Frequency Spectrum
-    plt.figure(figsize=(10, 6))
-    plt.bar(range(len(sfs)), sfs, color='skyblue')
-    plt.xlabel('Allele Frequency')
-    plt.ylabel('Number of Sites')
-    plt.title('Site Frequency Spectrum')
-    plt.show()
+    # Compile all results
+    results = {
+        'sim_id': sim_id,
+        'random_seed': random_seed,
+        'recombination_rate': recombination_rate,
+        'mutation_rate': mutation_rate,
+        'introgression_time': introgression_event['time'],
+        'introgression_proportion': introgression_event['proportion'],
+        'FST': analysis_results['FST'],
+        'D_statistic': analysis_results['D_statistic']
+    }
 
-    # Calculate FST between populations
-    pop_A = ts.samples(population=demography.population("Species_A").id)
-    pop_B = ts.samples(population=demography.population("Species_B").id)
-    FST = ts.Fst([pop_A, pop_B])
-    print(f"FST between Species_A and Species_B: {FST}")
+    return results
 
-    # Perform D-statistic analysis to distinguish introgression from ILS
-    # For D-statistic, we need four taxa; add an additional outgroup
+def main():
+    # Set up logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
+
+    # Simulation parameters
+    num_simulations = 100
+
+    # Define ranges for parameter sampling
+    recombination_rate_range = (1e-9, 1e-8)
+    mutation_rate_range = (1e-9, 1e-8)
+    introgression_time_range = (1000, 3000)
+    introgression_proportion_range = (0.05, 0.2)
+    length = 1e7  # Genome length
+
+    # Base demography
+    demography = msprime.Demography()
+    demography.add_population(name="Species_A", initial_size=10000)
+    demography.add_population(name="Species_B", initial_size=10000)
+    demography.add_population(name="Outgroup", initial_size=10000)
     demography.add_population(name="Outgroup2", initial_size=10000)
+
+    # Species split events
     demography.add_population_split(
         time=10000,
         derived=["Outgroup"],
         ancestral="Outgroup2"
     )
-    samples.append(msprime.SampleSet(5, population="Outgroup2", time=0))
-
-    # Re-run the simulation with the new outgroup
-    ts = simulate_genomes(
-        recombination_rate=recombination_rate,
-        mutation_rate=mutation_rate,
-        length=length,
-        samples=samples,
-        demography=demography,
-        introgression_events=introgression_events,
-        random_seed=42
+    demography.add_population_split(
+        time=5000,
+        derived=["Species_A", "Species_B"],
+        ancestral="Outgroup"
+    )
+    demography.add_population_split(
+        time=2000,
+        derived=["Species_B"],
+        ancestral="Species_A"
     )
 
-    # Get sample indices for each population
-    pop_A = ts.samples(population=demography.population("Species_A").id)
-    pop_B = ts.samples(population=demography.population("Species_B").id)
-    pop_O1 = ts.samples(population=demography.population("Outgroup").id)
-    pop_O2 = ts.samples(population=demography.population("Outgroup2").id)
+    # Sample sets
+    samples = [
+        msprime.SampleSet(5, population="Species_A", time=0),
+        msprime.SampleSet(5, population="Species_B", time=0),
+        msprime.SampleSet(5, population="Outgroup", time=0),
+        msprime.SampleSet(5, population="Outgroup2", time=0)
+    ]
 
-    # Convert genotype matrix
-    G = ts.genotype_matrix().T  # Shape (num_samples, num_sites)
+    # Prepare simulation parameters
+    simulation_params_list = []
+    for sim_id in range(num_simulations):
+        # Randomly sample parameters within specified ranges
+        recombination_rate = 10 ** np.random.uniform(
+            np.log10(recombination_rate_range[0]),
+            np.log10(recombination_rate_range[1])
+        )
+        mutation_rate = 10 ** np.random.uniform(
+            np.log10(mutation_rate_range[0]),
+            np.log10(mutation_rate_range[1])
+        )
+        introgression_time = np.random.uniform(
+            introgression_time_range[0],
+            introgression_time_range[1]
+        )
+        introgression_proportion = np.random.uniform(
+            introgression_proportion_range[0],
+            introgression_proportion_range[1]
+        )
+        random_seed = random.randint(1, 1e6)
 
-    # Prepare allele counts per population
-    import allel
-    haplotypes = G
-    ac1 = haplotypes[:, pop_A].sum(axis=1)
-    ac2 = haplotypes[:, pop_B].sum(axis=1)
-    ac3 = haplotypes[:, pop_O1].sum(axis=1)
-    ac4 = haplotypes[:, pop_O2].sum(axis=1)
+        introgression_event = {
+            'time': introgression_time,
+            'donor': "Species_B",
+            'recipient': "Species_A",
+            'proportion': introgression_proportion
+        }
 
-    # Compute D-statistics using scikit-allel
-    d_stat, f4 = allel.moving_patterson_d(
-        ac1[:, np.newaxis],
-        ac2[:, np.newaxis],
-        ac3[:, np.newaxis],
-        ac4[:, np.newaxis],
-        size=1000, step=1000
-    )
+        params = {
+            'random_seed': random_seed,
+            'recombination_rate': recombination_rate,
+            'mutation_rate': mutation_rate,
+            'length': length,
+            'introgression_event': introgression_event,
+            'demography': demography,
+            'samples': samples
+        }
+        simulation_params_list.append((sim_id, params))
 
-    # Plot D-statistic
-    plt.figure(figsize=(10, 6))
-    plt.plot(d_stat)
-    plt.xlabel('Window')
-    plt.ylabel('D-statistic')
-    plt.title('D-statistic across genome')
+    # Run simulations in parallel
+    logging.info("Starting simulations...")
+    results_list = []
+    with ProcessPoolExecutor() as executor:
+        futures = [executor.submit(simulation_worker, sim_id, params)
+                   for sim_id, params in simulation_params_list]
+        for future in futures:
+            result = future.result()
+            results_list.append(result)
+            logging.info(f"Completed simulation {result['sim_id']}")
+
+    # Convert results to DataFrame
+    results_df = pd.DataFrame(results_list)
+
+    # Save results to CSV
+    results_df.to_csv("simulation_results.csv", index=False)
+    logging.info("Simulation results saved to 'simulation_results.csv'.")
+
+    # Statistical analysis
+    # Calculate mean and standard deviation of FST and D-statistics
+    fst_mean = results_df['FST'].mean()
+    fst_std = results_df['FST'].std()
+    d_stat_mean = results_df['D_statistic'].mean()
+    d_stat_std = results_df['D_statistic'].std()
+
+    logging.info(f"FST Mean: {fst_mean}, FST Std Dev: {fst_std}")
+    logging.info(f"D-statistic Mean: {d_stat_mean}, D-statistic Std Dev: {d_stat_std}")
+
+    # Plotting results
+    plt.figure(figsize=(12, 6))
+    plt.subplot(1, 2, 1)
+    plt.hist(results_df['FST'], bins=20, color='skyblue', edgecolor='black')
+    plt.xlabel('F_ST')
+    plt.ylabel('Frequency')
+    plt.title('Distribution of F_ST across Simulations')
+
+    plt.subplot(1, 2, 2)
+    plt.hist(results_df['D_statistic'], bins=20, color='salmon', edgecolor='black')
+    plt.xlabel('D-statistic')
+    plt.ylabel('Frequency')
+    plt.title('Distribution of D-statistics across Simulations')
+
+    plt.tight_layout()
+    plt.savefig("simulation_histograms.png")
     plt.show()
+    logging.info("Histograms saved to 'simulation_histograms.png'.")
 
-    # Save the tree sequence for further analysis
-    ts.dump("enhanced_simulated_data.trees")
+    # Additional advanced analysis and visualization can be added here
 
 if __name__ == "__main__":
     main()

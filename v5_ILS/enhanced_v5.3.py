@@ -1,199 +1,89 @@
-
-# This script simulates gene genealogies under a coalescent model with
-# recombination, natural selection, incomplete lineage sorting (ILS), and introgression events.
-# It uses the msprime library for efficient coalescent simulations.
+# Enhanced script for simulating gene genealogies under a coalescent model
+# with recombination, incomplete lineage sorting (ILS), and introgression events
+# using msprime 1.x.
 
 import msprime
 import numpy as np
 import matplotlib.pyplot as plt
 
 def simulate_genomes(
-    population_configurations,
-    demographic_events,
     recombination_rate,
     mutation_rate,
     length,
     samples,
-    selection_coefficients=None,
-    selected_sites=None,
+    demography,
     introgression_events=None,
     random_seed=None
 ):
     """
-    Simulate genomes under a complex demographic model with recombination and selection.
+    Simulate genomes under a complex demographic model with recombination.
 
     Args:
-        population_configurations (list): List of msprime.PopulationConfiguration objects.
-        demographic_events (list): List of msprime.DemographicEvent objects.
         recombination_rate (float): Recombination rate per base pair per generation.
         mutation_rate (float): Mutation rate per base pair per generation.
         length (int): Length of the simulated genome in base pairs.
-        samples (list): List of msprime.Sample objects specifying samples to be taken.
-        selection_coefficients (dict): Dictionary of selection coefficients {position: s}.
-        selected_sites (list): List of positions under selection.
+        samples (list): List of msprime.SampleSet objects specifying samples to be taken.
+        demography (msprime.Demography): Demography object defining populations and events.
         introgression_events (list): List of dictionaries specifying introgression events.
         random_seed (int): Seed for random number generator.
 
     Returns:
         ts (msprime.TreeSequence): Simulated tree sequence.
     """
-
     if introgression_events is None:
         introgression_events = []
 
-    # Define the simulation model
-    model = msprime.Demography()
-    for pop_config in population_configurations:
-        model.add_population(
-            name=pop_config['name'],
-            initial_size=pop_config['initial_size']
-        )
-
-    # Add demographic events
-    for event in demographic_events:
-        if isinstance(event, msprime.MassMigration):
-            model.add_mass_migration(
-                time=event.time,
-                source=event.source,
-                dest=event.dest,
-                proportion=event.proportion
-            )
-        elif isinstance(event, msprime.PopulationParametersChange):
-            model.add_population_parameters_change(
-                time=event.time,
-                initial_size=event.initial_size,
-                population=event.population
-            )
-        elif isinstance(event, msprime.MigrationRateChange):
-            model.set_symmetric_migration_rate(
-                populations=[event.population],
-                rate=event.rate
-            )
-
     # Add introgression events as mass migrations
     for event in introgression_events:
-        model.add_mass_migration(
+        demography.add_mass_migration(
             time=event['time'],
-            source=event['donor'],
-            dest=event['recipient'],
+            source=event['recipient'],
+            dest=event['donor'],
             proportion=event['proportion']
         )
 
-    # Set up selection if specified
-    if selection_coefficients and selected_sites:
-        # Use pyslim to simulate selection (requires SLiM)
-        import pyslim  # Make sure to install pyslim
-        # Simulate neutral ancestry with msprime
-        ts = msprime.sim_ancestry(
-            samples=samples,
-            demography=model,
-            recombination_rate=recombination_rate,
-            sequence_length=length,
-            random_seed=random_seed
-        )
-        # Add mutations with selection using SLiM
-        ts = pyslim.convert_ancestry(ts, model_type="nonWF", slim_generation=1)
-        slim_script = generate_slim_script(
-            selection_coefficients=selection_coefficients,
-            selected_sites=selected_sites,
-            length=length
-        )
-        ts = pyslim.run_slim(slim_script, ts, sequence_length=length)
-    else:
-        # Simulate with msprime without selection
-        ts = msprime.sim_ancestry(
-            samples=samples,
-            demography=model,
-            recombination_rate=recombination_rate,
-            sequence_length=length,
-            random_seed=random_seed
-        )
-        ts = msprime.sim_mutations(
-            ts,
-            rate=mutation_rate,
-            random_seed=random_seed
-        )
+    # Simulate ancestry with msprime
+    ts = msprime.sim_ancestry(
+        samples=samples,
+        demography=demography,
+        recombination_rate=recombination_rate,
+        sequence_length=length,
+        random_seed=random_seed
+    )
+
+    # Add mutations
+    ts = msprime.sim_mutations(
+        ts,
+        rate=mutation_rate,
+        random_seed=random_seed
+    )
 
     return ts
 
-def generate_slim_script(selection_coefficients, selected_sites, length):
-    """
-    Generate a SLiM script for running simulations with selection.
-
-    Args:
-        selection_coefficients (dict): Dictionary of selection coefficients {position: s}.
-        selected_sites (list): List of positions under selection.
-        length (int): Length of the simulated genome in base pairs.
-
-    Returns:
-        slim_script (str): SLiM script as a string.
-    """
-    slim_script = """
-    // SLiM script generated by simulate_genomes function
-    initialize() {
-        initializeSLiMModelType("nonWF");
-        initializeTreeSeq();
-        initializeMutationRate(1e-8);
-        initializeMutationType("m1", 0.5, "f", 0.0);
-        initializeGenomicElementType("g1", m1, 1.0);
-        initializeGenomicElement(g1, 0, {length});
-        initializeRecombinationRate({recombination_rate});
-    }
-
-    1 early() {{
-        sim.addSubpop("p1", {N});
-    }}
-
-    1: late() {{
-    """.format(
-        length=length - 1,
-        recombination_rate=1e-8,
-        N=1000
-    )
-    for pos, s in selection_coefficients.items():
-        slim_script += """
-        m = sim.mutationType("m{0}", 0.5, "f", {1});
-        sim.addSubpop("p1").addNewMutation(m, {2});
-        """.format(pos, s, pos)
-    slim_script += """
-    }}
-
-    // Add additional evolutionary events here
-
-    // End of simulation
-    """
-    return slim_script
-
 def main():
     # Simulation parameters
-    population_configurations = [
-        {'name': 'Species_A', 'initial_size': 10000},
-        {'name': 'Species_B', 'initial_size': 10000}
-    ]
+    demography = msprime.Demography()
+    demography.add_population(name="Species_A", initial_size=10000)
+    demography.add_population(name="Species_B", initial_size=10000)
+    demography.add_population(name="Outgroup", initial_size=10000)
 
-    demographic_events = [
-        # Species split
-        msprime.MassMigration(
-            time=2000,
-            source=1,  # Species_B
-            dest=0,    # Species_A
-            proportion=1.0
-        ),
-        # Population size changes
-        msprime.PopulationParametersChange(
-            time=1000,
-            initial_size=5000,
-            population=0  # Species_A
-        ),
-        msprime.PopulationParametersChange(
-            time=3000,
-            initial_size=20000,
-            population=0  # Species_A
-        ),
-    ]
+    # Species split
+    demography.add_population_split(
+        time=5000,
+        derived=["Species_A", "Species_B"],
+        ancestral="Outgroup"
+    )
 
+    # Split between Species_A and Species_B
+    demography.add_population_split(
+        time=2000,
+        derived=["Species_B"],
+        ancestral="Species_A"
+    )
+
+    # Introgression events
     introgression_events = [
-        {'time': 1500, 'donor': 'Species_B', 'recipient': 'Species_A', 'proportion': 0.1}
+        {'time': 1500, 'donor': "Species_B", 'recipient': "Species_A", 'proportion': 0.1}
     ]
 
     recombination_rate = 1e-8  # Per base pair per generation
@@ -201,30 +91,24 @@ def main():
     length = 1e7               # Length of the genome in base pairs
 
     samples = [
-        msprime.SampleSet(5, population='Species_A', time=0),
-        msprime.SampleSet(5, population='Species_B', time=0)
+        msprime.SampleSet(5, population="Species_A", time=0),
+        msprime.SampleSet(5, population="Species_B", time=0),
+        msprime.SampleSet(5, population="Outgroup", time=0)
     ]
-
-    # Selection parameters
-    selection_coefficients = {5e6: 0.01}  # Positive selection at position 5 Mb
-    selected_sites = [5e6]
 
     # Run the simulation
     ts = simulate_genomes(
-        population_configurations=population_configurations,
-        demographic_events=demographic_events,
         recombination_rate=recombination_rate,
         mutation_rate=mutation_rate,
         length=length,
         samples=samples,
-        selection_coefficients=selection_coefficients,
-        selected_sites=selected_sites,
+        demography=demography,
         introgression_events=introgression_events,
         random_seed=42
     )
 
     # Analyze the results
-    # Calculate statistics like Site Frequency Spectrum, FST, etc.
+    # Calculate Site Frequency Spectrum
     sfs = ts.allele_frequency_spectrum(mode="site", polarized=False)
     print("Site Frequency Spectrum:")
     print(sfs)
@@ -238,12 +122,68 @@ def main():
     plt.show()
 
     # Calculate FST between populations
-    pops = [ts.samples(population=0), ts.samples(population=1)]
-    FST = ts.Fst(sample_sets=pops)
+    pop_A = ts.samples(population=demography.population("Species_A").id)
+    pop_B = ts.samples(population=demography.population("Species_B").id)
+    FST = ts.Fst([pop_A, pop_B])
     print(f"FST between Species_A and Species_B: {FST}")
 
-    # Export tree sequence for further analysis
-    ts.dump("simulated_data.trees")
+    # Perform D-statistic analysis to distinguish introgression from ILS
+    # For D-statistic, we need four taxa; add an additional outgroup
+    demography.add_population(name="Outgroup2", initial_size=10000)
+    demography.add_population_split(
+        time=10000,
+        derived=["Outgroup"],
+        ancestral="Outgroup2"
+    )
+    samples.append(msprime.SampleSet(5, population="Outgroup2", time=0))
+
+    # Re-run the simulation with the new outgroup
+    ts = simulate_genomes(
+        recombination_rate=recombination_rate,
+        mutation_rate=mutation_rate,
+        length=length,
+        samples=samples,
+        demography=demography,
+        introgression_events=introgression_events,
+        random_seed=42
+    )
+
+    # Get sample indices for each population
+    pop_A = ts.samples(population=demography.population("Species_A").id)
+    pop_B = ts.samples(population=demography.population("Species_B").id)
+    pop_O1 = ts.samples(population=demography.population("Outgroup").id)
+    pop_O2 = ts.samples(population=demography.population("Outgroup2").id)
+
+    # Convert genotype matrix
+    G = ts.genotype_matrix().T  # Shape (num_samples, num_sites)
+
+    # Prepare allele counts per population
+    import allel
+    haplotypes = G
+    ac1 = haplotypes[:, pop_A].sum(axis=1)
+    ac2 = haplotypes[:, pop_B].sum(axis=1)
+    ac3 = haplotypes[:, pop_O1].sum(axis=1)
+    ac4 = haplotypes[:, pop_O2].sum(axis=1)
+
+    # Compute D-statistics using scikit-allel
+    d_stat, f4 = allel.moving_patterson_d(
+        ac1[:, np.newaxis],
+        ac2[:, np.newaxis],
+        ac3[:, np.newaxis],
+        ac4[:, np.newaxis],
+        size=1000, step=1000
+    )
+
+    # Plot D-statistic
+    plt.figure(figsize=(10, 6))
+    plt.plot(d_stat)
+    plt.xlabel('Window')
+    plt.ylabel('D-statistic')
+    plt.title('D-statistic across genome')
+    plt.show()
+
+    # Save the tree sequence for further analysis
+    ts.dump("enhanced_simulated_data.trees")
 
 if __name__ == "__main__":
     main()

@@ -185,6 +185,18 @@ def simulation_worker(sim_id, params):
 
     return results
 
+def sample_parameters():
+    recombination_rate = 10 ** np.random.uniform(-10, -8)  # Biological constraint: ~1e-10 to 1e-8
+    mutation_rate = 10 ** np.random.uniform(-10, -8)       # Biological constraint: ~1e-10 to 1e-8
+    introgression_time = np.random.uniform(1000, 3000)     # Define relevant time range
+    introgression_proportion = np.random.uniform(0.01, 0.3)  # Adjusted range for plausibility
+    
+    logging.info(f"Sampled parameters - Recombination rate: {recombination_rate}, "
+                 f"Mutation rate: {mutation_rate}, Introgression time: {introgression_time}, "
+                 f"Introgression proportion: {introgression_proportion}")
+    
+    return recombination_rate, mutation_rate, introgression_time, introgression_proportion
+
 def main():
     # Set up logging
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
@@ -234,6 +246,15 @@ def main():
     # Prepare simulation parameters
     simulation_params_list = []
     for sim_id in range(num_simulations):
+
+        recombination_rate, mutation_rate, introgression_time, introgression_proportion = sample_parameters()
+        introgression_event = {
+            'time': introgression_time,
+            'donor': "Species_B",
+            'recipient': "Species_A",
+            'proportion': introgression_proportion
+        }
+        
         # Randomly sample parameters within specified ranges
         recombination_rate = 10 ** np.random.uniform(
             np.log10(recombination_rate_range[0]),

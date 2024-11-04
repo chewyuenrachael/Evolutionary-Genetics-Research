@@ -35,6 +35,28 @@ def simulate_genomes(
     Returns:
         ts (msprime.TreeSequence): Simulated tree sequence.
     """
+    
+    # Validate recombination rate
+    if recombination_rate <= 0 or recombination_rate > 1e-6:
+        raise ValueError("Recombination rate must be a positive value and below 1e-6.")
+
+    # Validate mutation rate
+    if mutation_rate <= 0 or mutation_rate > 1e-6:
+        raise ValueError("Mutation rate must be a positive value and below 1e-6.")
+
+    # Validate length of genome
+    if length <= 0:
+        raise ValueError("Genome length must be a positive integer.")
+
+    # Validate introgression parameters
+    if not (0 < introgression_event['proportion'] <= 1):
+        raise ValueError("Introgression proportion must be between 0 and 1.")
+    
+    # Validate population structure
+    if introgression_event['donor'] not in [pop.name for pop in demography.populations] or \
+       introgression_event['recipient'] not in [pop.name for pop in demography.populations]:
+        raise ValueError("Introgression donor and recipient must be valid population names.")
+    
     # Create a copy of the demography to avoid modifying the original
     demography_sim = demography.copy()
     

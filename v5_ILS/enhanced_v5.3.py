@@ -149,6 +149,7 @@ def simulation_worker(sim_id, params):
     Returns:
         results (dict): Dictionary containing simulation ID, parameters, and analysis results.
     """
+    logging.info(f"Starting simulation {sim_id} with parameters: {params}")
     random_seed = params['random_seed']
     recombination_rate = params['recombination_rate']
     mutation_rate = params['mutation_rate']
@@ -170,6 +171,10 @@ def simulation_worker(sim_id, params):
 
     # Analyze the simulation
     analysis_results = analyze_simulation(ts, demography)
+    logging.info(f"Completed simulation {sim_id} with results: FST={analysis_results['FST']}, D-statistic={analysis_results['D_statistic']}")
+    except Exception as e:
+        logging.error(f"Error in simulation {sim_id}: {e}")
+        return {'sim_id': sim_id, 'error': str(e)}
 
     # Compile all results
     results = {
@@ -339,7 +344,7 @@ def main():
     plt.show()
     logging.info("Histograms saved to 'simulation_histograms.png'.")
 
-    # Additional advanced analysis and visualization can be added here
+
 
 if __name__ == "__main__":
     main()

@@ -269,6 +269,17 @@ Joint detection increases with stronger migration and large Ne. FST lags in sens
 
 ---
 
+### 📊 Summary of Metric Behavior Across Scenarios (Sections 5.1–5.4)
+
+| **Scenario**        | **D-statistic Behavior**                                                                 | **F<sub>ST</sub> Behavior**                                                                 |
+|---------------------|-------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| **Pure ILS**        | Centers near 0; no detection power                                                       | High variance; insensitive to introgression                                                  |
+| **Pure Introgression** | Strong increase with gene flow; saturates at high migration                             | Steady decline with gene flow; sensitive across full range                                   |
+| **Mixed Scenarios** | Skewed distributions under moderate migration; high detection power under intermediate divergence | Fails to differentiate weak introgression from ILS; limited power under intermediate divergence |
+| **Joint Behavior**  | Inverse correlation with F<sub>ST</sub>; clusters reveal clear signal separation under migration | Improves interpretability when jointly analyzed with D-statistic                             |
+
+---
+
 ## 📦 Dependencies
 Install with:
 ```bash

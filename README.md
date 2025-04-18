@@ -14,23 +14,45 @@ Incomplete lineage sorting (ILS) and introgression are two major sources of gene
 
 ```
 project_root/
-├── simulations/                  # Python scripts for generating simulations
-│   ├── ils_only.py              # Pure ILS simulations
-│   ├── pure_introgression.py   # Pure introgression simulations
-│   ├── mixed_introgression.py  # Combined ILS + introgression simulations
-│   ├── parameter_sweep.py      # Migration, Ne, and timing parameter sweeps
-│   ├── genome_structure.py     # Simulation of genome block heterogeneity
-│   └── common_utils.py         # Shared utilities: D-stat, FST, KDE, plotting
+├── simulations/                      # Python scripts for generating simulations
+│   ├── ils_only.py                   # Pure ILS simulations
+│   ├── pure_introgression.py        # Pure introgression simulations
+│   ├── mixed_introgression.py       # Combined ILS + introgression simulations
+│   ├── parameter_sweep.py           # Migration, Ne, and timing parameter sweeps
+│   ├── genome_structure.py          # Simulation of genome block heterogeneity
+│   └── common_utils.py              # Shared utilities: D-stat, FST, KDE, plotting
 │
-├── notebooks/                   # Analysis & visualization notebooks
+├── notebooks/                       # Analysis & visualization notebooks
 │   ├── 1_ILS_only_results.ipynb
 │   ├── 2_Pure_introgression.ipynb
 │   ├── 3_Mixed_introgression.ipynb
-│   └── 4_Power_curves.ipynb
+│   ├── 4_Power_curves.ipynb
+│   ├── 5_KDE_exploratory.ipynb
+│   ├── 6_Joint_Inference.ipynb
+│   └── figures/                     # All printed figures from simulation notebooks
+│       ├── expanded_joint/
+│       ├── expanded_kde/
+│       ├── expanded_power/
+│       ├── final_kde_plots/
+│       ├── kde_plots/
+│       ├── mixed_updated/
+│       ├── power/
+│       ├── section_5_4/
+│       └── final_insightful_plot_FIXED.png
 │
-├── results/                     # Outputs from simulations (CSV, npz, etc.)
-├── figures/                     # Final plots for manuscript use
-└── README.md                    # Project overview and usage guide
+├── results/                         # Final CSV outputs from simulations
+│   ├── dstat_distributions/
+│   │   ├── ils_only.csv
+│   │   ├── mixed_introgression.csv
+│   │   └── pure_introgression.csv
+│   ├── fst_distributions/
+│   │   ├── ils_only.csv
+│   │   ├── pure_introgression.csv
+│   │   └── fst_windows_bc.csv
+│   └── extreme_migration_results.csv
+│
+├── .gitignore
+└── README.md                        # Project overview and usage guide
 ```
 
 ---

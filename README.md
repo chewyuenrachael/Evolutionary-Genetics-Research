@@ -326,6 +326,30 @@ python simulations/parameter_sweep.py
 
 ---
 
+### 📄 Example Output: Summary of Simulated Replicates
+
+Each simulation produces detailed summary statistics stored as `.csv` files in the `results/` directory. These include demographic parameters, migration settings, and computed values of D-statistic, ABBA/BABA counts, and FST.
+
+| rep | Ne     | divergence | mig_time | mig_rate | mig_model | mig_direction | D      | ABBA     | BABA     | FST_AB  | FST_BC  |
+|-----|--------|------------|----------|----------|------------|----------------|--------|----------|----------|---------|---------|
+| 0   | 100000 | shallow    | recent   | none     | episodic   | C_to_B         | 0.0355 | 436.13   | 406.22   | 0.1395  | 0.1984  |
+| 1   | 100000 | shallow    | recent   | none     | episodic   | C_to_B         | 0.0482 | 416.60   | 378.28   | 0.1326  | 0.1952  |
+| 2   | 100000 | shallow    | recent   | none     | episodic   | C_to_B         | 0.0191 | 437.12   | 420.73   | 0.1334  | 0.2007  |
+
+**Parameter meanings**:
+- `rep`: Replicate number
+- `Ne`: Effective population size
+- `divergence`: Depth of species split (shallow/intermediate/deep)
+- `mig_time`, `mig_rate`, `mig_model`: Temporal and intensity profile of migration
+- `mig_direction`: Direction of introgression (typically C → B)
+- `D`: D-statistic (ABBA-BABA imbalance)
+- `ABBA` / `BABA`: Site pattern counts
+- `FST_AB`, `FST_BC`: Pairwise genetic differentiation (Weir & Cockerham)
+
+This structured output enables downstream power analysis, KDE-based clustering, and parameter-specific inference.
+
+---
+
 ## 🧠 Scientific Contribution
 - First to propose joint KDE-based D-stat & FST signatures
 - Establishes practical detection thresholds (D > 0.2; FST < null range)

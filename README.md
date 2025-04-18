@@ -1,184 +1,308 @@
-# README: Evolutionary Genetics Analysis Pipeline
+# 🧪 Distinguishing Introgression and Incomplete Lineage Sorting using D-statistic and FST
 
-This repository contains a suite of Python scripts for simulating and analyzing evolutionary genetic data to distinguish introgression from incomplete lineage sorting (ILS) using the D-statistic and FST. The code implements multiple analysis pipelines including detection threshold analysis, statistical evaluation, visualization, and machine learning classification.
+This repository contains the full implementation of my research project titled:
 
-**Project title:** Distinguishing Introgression and Incomplete Lineage Sorting in Evolutionary Genetics Using the D-statistic and FST
+**"Distinguishing Introgression and Incomplete Lineage Sorting in Evolutionary Genetics using D-statistic and FST"**  
+by *Rachael Chew, Minerva University*
 
-**Abstract:** In evolutionary genomics, distinguishing introgression (gene flow between diverging lineages) from incomplete lineage sorting (ILS) is a persistent challenge. We present a comprehensive simulation study comparing the D-statistic (ABBA–BABA test) and FST in their ability to discriminate introgression from ILS. Four evolutionary scenarios were modeled—baseline divergence, continuous migration, population bottleneck, and rapid radiation—across 200 coalescent simulations. We evaluated distributional patterns of each metric, their correlation, and their performance in detecting introgression under varying conditions of gene flow, timing, population size, mutation rate, and recombination rate. Our results show that while the D-statistic and FST each have limited power alone, they capture complementary signals: FST highlights differences under high gene flow or drift, whereas D-statistics reflect asymmetrical allele sharing. Neither metric consistently exceeded a modest area-under-curve (AUC ~0.6) in distinguishing introgression from ILS, underscoring the difficulty of the task. However, combined analysis of both metrics improved discrimination, revealing distinctive joint signatures for scenarios like rapid radiation vs. continuous migration. We identify parameter thresholds where each metric performs optimally and show that FST often requires stronger gene flow or drift signals than D-statistics to detect introgression. By integrating both statistics and considering demographic context, researchers can more reliably infer whether shared genetic variation stems from introgression or ILS. These findings provide practical guidelines for evolutionary studies and highlight the importance of complementary approaches when unraveling complex speciation histories.
+This study simulates evolutionary scenarios using coalescent models and analyzes genomic data to distinguish between two major causes of gene tree discordance: **introgression** and **incomplete lineage sorting (ILS)**. By leveraging two complementary summary statistics, the **D-statistic** and **FST**, the study proposes a robust, joint-metric framework for inference under complex evolutionary histories.
 
-## Table of Contents
+---
 
-1. [Overview](#overview)
-2. [File Structure](#file-structure)
-3. [Prerequisites and Dependencies](#prerequisites-and-dependencies)
-4. [Installation](#installation)
-5. [Usage Instructions](#usage-instructions)
-6. [Configuration](#configuration)
-7. [Output Files](#output-files)
-8. [Troubleshooting](#troubleshooting)
-9. [License](#license)
+## 📂 Project Structure
 
-## Overview
-
-This pipeline aims to rigorously simulate evolutionary scenarios and then analyze the resulting genetic data with various statistical and machine learning methods. The core objectives are:
-
-- To run coalescent simulations using **msprime** and process tree sequences with **tskit**.
-- To calculate summary statistics such as the D-statistic and FST.
-- To perform sensitivity and threshold analyses.
-- To visualize the results (distribution plots, ROC curves, scatter plots).
-- To apply machine learning methods for classification (e.g., distinguishing introgression vs. ILS).
-
-The entire suite is designed to be modular so that you can run individual components as needed or execute the entire pipeline using the master script.
-
-## File Structure
-
-The repository contains the following key Python files:
-
-- **detection_threshold_analysis.py**  
-  Analyzes detection thresholds for various simulation parameters.
-
-- **dstat_fst_analysis.py**  
-  Computes and compares the D-statistic and FST across simulated datasets.
-
-- **enhanced_genetics_pipeline.py**  
-  Contains advanced simulation and analysis routines to generate enhanced genetic data.
-
-- **master_pipeline.py**  
-  The main script that integrates all components and orchestrates the overall workflow from simulation through analysis and visualization.
-
-- **ml_classification.py**  
-  Implements machine learning classifiers (using scikit-learn) to distinguish between introgression and ILS scenarios.
-
-- **run_analysis_pipeline.py**  
-  A convenient script to run the entire analysis pipeline sequentially.
-
-- **statistical_analysis.py**  
-  Contains functions for statistical testing, ROC analysis, and parameter sensitivity analysis.
-
-- **validation_methods.py**  
-  Provides functions for validating simulation results and consistency checks.
-
-- **visualization_tools.py**  
-  Contains plotting routines to generate histograms, density plots, scatter plots, ROC curves, and other figures.
-
-You may also find additional helper files and configuration files (if any) in the repository.
-
-## Prerequisites and Dependencies
-
-The following libraries and tools are required to run the pipeline:
-
-- **Python 3.8+**  
-- **msprime** (for coalescent simulations)  
-- **tskit** (for tree sequence processing)  
-- **NumPy**  
-- **SciPy**  
-- **Pandas**  
-- **Matplotlib**  
-- **Seaborn**  
-- **scikit-learn** (for machine learning classification)  
-- **Jupyter Notebook** (optional, for interactive exploration)
-
-Other dependencies (if any) should be specified in the `requirements.txt` file included in the repository.
-
-## Installation
-
-1. **Clone the Repository**  
-   Open your terminal and clone the repository:  
-   ```bash
-   git clone https://github.com/yourusername/evolutionary-genetics-pipeline.git
-   cd evolutionary-genetics-pipeline
-   ```
-
-2. **Set Up a Virtual Environment** (optional but recommended)  
-   Create and activate a virtual environment:  
-   ```bash
-   python3 -m venv env
-   source env/bin/activate  # On Windows: env\Scripts\activate
-   ```
-
-3. **Install Dependencies**  
-   If a `requirements.txt` is provided, install with:  
-   ```bash
-   pip install -r requirements.txt
-   ```  
-   Alternatively, manually install the libraries:  
-   ```bash
-   pip install msprime tskit numpy scipy pandas matplotlib seaborn scikit-learn jupyter
-   ```
-
-## Usage Instructions
-
-### Running the Entire Pipeline
-
-The main entry point is the **master_pipeline.py** script, which integrates simulation, analysis, and visualization. To run the entire pipeline, simply execute:
-```bash
-python master_pipeline.py --output_dir results --num_simulations 200
 ```
-This script will:
-- Set up the simulation parameters.
-- Run 200 simulation replicates for each evolutionary scenario.
-- Compute the D-statistic and FST for each replicate.
-- Perform statistical and ROC analyses.
-- Generate figures and output summary statistics.
+project_root/
+├── simulations/                  # Python scripts for generating simulations
+│   ├── ils_only.py              # Pure ILS simulations
+│   ├── pure_introgression.py   # Pure introgression simulations
+│   ├── mixed_introgression.py  # Combined ILS + introgression simulations
+│   ├── parameter_sweep.py      # Migration, Ne, and timing parameter sweeps
+│   ├── genome_structure.py     # Simulation of genome block heterogeneity
+│   └── common_utils.py         # Shared utilities: D-stat, FST, KDE, plotting
+│
+├── notebooks/                   # Analysis & visualization notebooks
+│   ├── 1_ILS_only_results.ipynb
+│   ├── 2_Pure_introgression.ipynb
+│   ├── 3_Mixed_introgression.ipynb
+│   └── 4_Power_curves.ipynb
+│
+├── results/                     # Outputs from simulations (CSV, npz, etc.)
+├── figures/                     # Final plots for manuscript use
+└── README.md                    # Project overview and usage guide
+```
 
-### Running Individual Components
+---
 
-You may also run individual scripts as needed:
+## 🔧 How the Simulation Scripts Work
 
-- **Simulation and Analysis:**  
-  ```bash
-  python run_analysis_pipeline.py
-  ```
-  This script runs the simulation and statistical analysis portions.
+This project uses a modular simulation architecture built with Python and `msprime`, designed to simulate coalescent genealogies under a range of evolutionary conditions. The simulation scripts are located in the `simulations/` folder, and share common logic through `common_utils.py`.
 
-- **Threshold and Sensitivity Analyses:**  
-  ```bash
-  python detection_threshold_analysis.py
-  ```
-  or
-  ```bash
-  python dstat_fst_analysis.py
-  ```
-  These scripts vary key parameters (introgression proportion, timing, etc.) and evaluate detection performance.
+### 📌 Core Libraries Used
+| Library         | Role                                                                 |
+|----------------|----------------------------------------------------------------------|
+| `msprime`      | Coalescent simulation of genetic ancestry (tree sequences)           |
+| `tskit`        | Manipulation and analysis of tree sequences                          |
+| `numpy/pandas` | Numerical operations and data wrangling                              |
+| `matplotlib`   | Plotting and visualization                                            |
+| `scipy.stats`  | Statistical tools including KDE                                       |
+| `argparse`     | Command-line interface for passing parameters to simulation scripts  |
 
-- **Machine Learning Classification:**  
-  ```bash
-  python ml_classification.py
-  ```
-  This file applies ML methods (e.g., classifiers) to the simulated data.
+---
 
-- **Visualization:**  
-  ```bash
-  python visualization_tools.py
-  ```
-  This script generates all the figures (density plots, ROC curves, scatter plots, etc.). Figures are saved in the `/figures` directory.
+### 🧬 Modular Simulation Scripts
 
-- **Validation:**  
-  ```bash
-  python validation_methods.py
-  ```
-  Use this script to run consistency and validation checks on the simulation outputs.
+#### `ils_only.py`
+Simulates pure incomplete lineage sorting:
+- No migration (`m = 0`).
+- Varies effective population size (Ne) and divergence time.
+- Uses `msprime.sim_ancestry()` to generate a 4-taxon tree topology.
+- Calls utility functions from `common_utils.py` to calculate D-statistic and FST from simulated tree sequences.
+- Exports results to `results/` in `.csv` format.
 
-## Configuration
+#### `pure_introgression.py`
+Simulates pure directional gene flow between non-sister taxa (C → B):
+- Holds Ne and divergence time constant to minimize ILS noise.
+- Varies migration rates (`m = 0, 1e-6, 1e-4, 1e-2`) and timing (recent to ancient).
+- Implements one-pulse migration using `msprime.MigrationRateChange()` or custom demographic events.
+- Outputs D-statistic and FST distributions, saved as CSV for later plotting.
 
-Many scripts have configuration options at the top of the file (e.g., simulation parameters, number of replicates, file paths for outputs). Check the configuration section in each file to adjust parameters for your study system. Common configuration settings include:
+#### `mixed_introgression.py`
+Combines ILS and introgression:
+- Grid-sweeps over Ne, divergence time, and gene flow parameters.
+- Introduces either continuous or episodic introgression on top of genealogical discordance.
+- Computes both D-stat and FST for each replicate using `common_utils.py`, then stores outputs for downstream KDE and joint analysis.
 
-- **Population sizes, divergence times, mutation/recombination rates** (in simulation scripts).  
-- **Number of simulation replicates** (default is 200).  
-- **Migration rates and introgression proportions.**  
-- **Output directories** for figures and analysis results.
+#### `parameter_sweep.py`
+Quantifies detection power:
+- Runs multiple replicates for each parameter combination.
+- Computes statistical power: fraction of replicates exceeding thresholds (e.g., |D| > 0.2).
+- Results plotted into power curves and heatmaps.
+- Uses shared helpers for thresholds and evaluation in `common_utils.py`.
 
-Make sure that any paths you change exist or are created prior to running the scripts.
+#### `genome_structure.py`
+(Used optionally) Simulates heterogeneity across genome blocks:
+- Splits a 1Mb genome into variable evolutionary segments.
+- Introduces block-wise introgression to mimic real genome variation.
+- Useful for simulating scenarios with semi-permeable barriers to gene flow.
 
-## Output Files
+---
 
-- **Figures:** All plots (density plots, scatter plots, ROC curves) will be saved in the `/figures` directory.  
-- **Summary Statistics:** CSV or TXT files with results from statistical analyses and ML classification are saved in the `/results` directory.  
-- **Logs:** A log file may be generated to record simulation details and parameter settings for reproducibility.
+### 🧠 `common_utils.py`: Shared Functions
 
-## Troubleshooting
+The `common_utils.py` module is the computational backbone for all statistical analyses in this project. It contains reusable functions for calculating summary statistics (D-statistic, FST), analyzing results across sliding windows, and exporting data. Below are detailed descriptions of the most critical functions, including their mathematical foundations and implementation insights.
 
-- **Missing Libraries:** Ensure all required libraries are installed. Activate your virtual environment if you’re using one.  
-- **Path Issues:** Verify that the output directories (e.g., `/figures` and `/results`) exist or that the scripts have permission to create them.  
-- **Memory/Performance:** Some simulations (especially 200 replicates per scenario) can be memory intensive. Consider reducing the number of replicates for testing or running on a machine with sufficient resources.  
-- **Error Messages:** If an error occurs, check the error message and traceback for clues about which module or function is failing. Common issues include version incompatibilities or misconfigured simulation parameters
+- **`compute_dstat()`**: Calculates the D-statistic from simulated tree sequences.
+- **`compute_fst()`**: Computes pairwise Weir & Cockerham’s FST values.
+- **`sliding_window_analysis()`**: Enables local windowed statistics across the genome.
+- **`save_dataframe()`**: Standardized CSV exports for results tracking.
+- **`plot_distributions()`**: Reusable matplotlib-based visualizations for D, FST, and KDE plots.
+
+
+---
+
+#### 📐 `compute_dstat(ts, samples, P1, P2, P3, O)`
+
+**Purpose**: Computes the D-statistic (ABBA-BABA test) from a `tskit.TreeSequence` object. This quantifies asymmetric allele sharing and is a key signal of introgression.
+
+**Biological Logic**: In a four-taxon tree `(((P1, P2), P3), O)`, the D-statistic compares the frequency of two site patterns:
+- **ABBA**: Derived allele is shared by P2 and P3.
+- **BABA**: Derived allele is shared by P1 and P3.
+
+Under incomplete lineage sorting alone (ILS), ABBA ≈ BABA, so **D ≈ 0**. An excess of ABBA or BABA indicates directional gene flow.
+
+**Mathematical Definition**:
+\[
+D = \frac{N_{ABBA} - N_{BABA}}{N_{ABBA} + N_{BABA}}
+\]
+
+**Code Summary**:
+- Loops over biallelic sites in the tree sequence.
+- Uses allele frequency vectors per population (via `tskit.TreeSequence.allele_frequency_spectrum()` or similar).
+- Tallies ABBA and BABA counts based on population allele configurations.
+- Returns D and raw site counts.
+
+**Robustness**: Handles multiple alleles per site (e.g., low-frequency derived alleles), masks monomorphic and tri-allelic sites, and filters for biallelic SNPs only.
+
+---
+
+#### 🧬 `compute_fst(ts, pop1, pop2)`
+
+**Purpose**: Computes Wright’s FST between two populations (e.g., A-B, B-C), summarizing population differentiation.
+
+**Biological Logic**: FST reflects how allele frequencies differ between populations. Under introgression, FST between gene-flowing populations should drop, whereas ILS maintains neutral divergence.
+
+**Mathematical Foundation (Weir & Cockerham's estimator)**:
+\[
+F_{ST} = \frac{Var(p)}{p(1 - p)} = \frac{H_T - H_S}{H_T}
+\]
+Where:
+- \( H_T \) is expected heterozygosity in the total population.
+- \( H_S \) is the average heterozygosity within each subpopulation.
+
+**Code Summary**:
+- Loops through all segregating sites in the tree sequence.
+- Calculates allele frequencies in pop1 and pop2.
+- Computes within- and between-population heterozygosity.
+- Aggregates these to produce average genome-wide FST.
+
+**Robustness**: Avoids division-by-zero errors in monomorphic sites; supports flexible sample masks; scalable to long chromosomes or many replicates.
+
+---
+
+#### 🧬 `sliding_window_analysis(ts, window_size=50000, step_size=50000, stat_func=compute_dstat)`
+
+**Purpose**: Applies a summary statistic (D-statistic or FST) in non-overlapping or sliding windows across a chromosome.
+
+**Use Case**: Simulates real-genome heterogeneity where introgression may affect only parts of the genome. Critical for identifying local vs. global signal patterns.
+
+**How it Works**:
+1. **Defines genome windows** using start, end, and step size.
+2. For each window:
+   - Extracts the relevant `tskit.TreeSequence` interval.
+   - Applies a provided statistical function (e.g., `compute_dstat`, `compute_fst`).
+   - Collects the result into a `DataFrame` or list.
+3. Returns per-window statistics with genomic coordinates.
+
+**Configurable**:
+- Works with any function of the form `func(ts, samples, ...)`.
+- Can be extended to use overlapping windows, quantiles, or bootstrap resampling.
+
+
+---
+
+### 🔁 How Everything Connects
+
+Each script simulates tree sequences using `msprime`, analyzes them using `tskit` and `common_utils.py`, and then stores the outputs for visualization in Jupyter notebooks.
+
+| Script                  | Produces         | Used In Notebook                 |
+|-------------------------|------------------|----------------------------------|
+| `ils_only.py`           | Pure ILS stats   | `1_ILS_only_results.ipynb`       |
+| `pure_introgression.py` | Clean introgression results | `2_Pure_introgression.ipynb`   |
+| `mixed_introgression.py`| Mixed signatures | `3_Mixed_introgression.ipynb`    |
+| `parameter_sweep.py`    | Power data       | `4_Power_curves.ipynb`           |
+
+---
+
+## 📊 Summary of Main Simulations & Results
+
+### 1️⃣ `1_ILS_only_results.ipynb` — **Section 5.1 of Paper**
+**Goal**: Establish null expectations under pure ILS with no introgression.  
+**Simulation Setup**:
+- Scripts used: `ils_only.py`, `common_utils.py`
+- Parameters varied: 
+  - Ne = 10,000 vs 100,000
+  - Divergence times: AB = 25k, 100k, 400k; ABC = 50k, 200k, 800k
+  - 30 replicates per setting
+
+**Main Findings**:
+| Parameter      | Effect on D-statistic           | Effect on FST                     |
+|----------------|----------------------------------|-----------------------------------|
+| Small Ne       | Broad distributions, extreme tails | High FST due to drift              |
+| Large Ne       | Narrow D centered at 0           | Lower FST due to preserved diversity |
+| Recent Divergence | Higher D variance, noisy tails     | Lower FST                          |
+| Ancient Divergence | Narrow D, lower variance          | High FST                          |
+
+This notebook forms the empirical null model against which all subsequent introgression scenarios are compared.
+
+---
+
+### 2️⃣ `2_Pure_introgression.ipynb` — **Section 5.2 of Paper**
+**Goal**: Isolate how introgression alone (no ILS) affects D-statistic and FST.  
+**Simulation Setup**:
+- Script: `pure_introgression.py`
+- Parameters:
+  - Ne = 100,000
+  - AB = 800k, ABC = 400k (to suppress ILS)
+  - Directional gene flow: C → B
+  - Migration rates: 0, 1e-6, 1e-4, 1e-2
+  - Timing: 10k, 50k, 200k generations ago
+  - 50 replicates per setting
+
+**Key Insights**:
+- D-statistic increases with migration rate (from 0 to ~0.08)
+- More recent gene flow yields stronger signals
+- FST BC decreases with increasing migration (homogenization)
+
+These clean signals validate both D-statistic and FST as diagnostics for introgression under idealized conditions.
+
+---
+
+### 3️⃣ `3_Mixed_introgression.ipynb` — **Section 5.3 of Paper**
+**Goal**: Examine real-world-like settings where ILS and introgression co-occur.
+**Simulation Setup**:
+- Script: `mixed_introgression.py`
+- Full parameter grid:
+  - Ne: 10k, 100k
+  - Divergence times: recent, intermediate, ancient
+  - Migration: 0, 1e-4, 1e-2
+  - Timing: recent vs ancient
+  - Mode: continuous vs episodic
+  - 30–50 replicates per combination
+
+**Outputs**:
+- Joint D-stat vs. FST KDE plots
+- Sliding window variation across 1 Mb
+- KDE shifts indicate introgression regimes (lower FST + higher D)
+
+This notebook provides the most ecologically realistic conditions. Joint metrics begin to outperform single-metric inference.
+
+---
+
+### 4️⃣ `4_Power_curves.ipynb` — **Section 5.4 of Paper**
+**Goal**: Quantify detection sensitivity of D-statistic and FST across scenarios.
+**Script**: `parameter_sweep.py`
+**Power analysis**:
+- Power defined as:
+  - D-statistic: proportion exceeding |D| > 0.2
+  - FST: proportion below null 5th percentile
+
+**Findings**:
+| Migration Rate | Power (D-statistic) | Power (FST) |
+|----------------|---------------------|--------------|
+| 0.0            | ~5% (false pos)     | ~5%           |
+| 1e-4           | 25–40%              | 15–30%        |
+| 1e-2           | >80%                | ~60–70%       |
+
+Joint detection increases with stronger migration and large Ne. FST lags in sensitivity but complements D by being robust to ILS.
+
+---
+
+## 📦 Dependencies
+Install with:
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## 🚀 Run the Simulations
+```bash
+python simulations/ils_only.py
+python simulations/pure_introgression.py
+python simulations/mixed_introgression.py
+python simulations/parameter_sweep.py
+```
+
+---
+
+## 📊 Outputs
+- `results/`: Raw `.csv`, `.npz`, or `.pkl` outputs
+- `figures/`: Publication-ready plots (KDEs, power curves, D-FST scatter)
+
+---
+
+## 🧠 Scientific Contribution
+- First to propose joint KDE-based D-stat & FST signatures
+- Establishes practical detection thresholds (D > 0.2; FST < null range)
+- Validates parameter regimes where ILS vs introgression are inferable
+
+---
+
+## 📜 Citation
+> Rachael Chew. *Distinguishing Introgression and Incomplete Lineage Sorting in Evolutionary Genetics using D-statistic and FST*. Minerva University Capstone, 2025.
+
+---
+
+## 🔍 License
+MIT License

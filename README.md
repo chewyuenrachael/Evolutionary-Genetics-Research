@@ -1,11 +1,12 @@
 # 🧪 Distinguishing Introgression and Incomplete Lineage Sorting using D-statistic and FST
 
-This repository contains the full implementation of my research project titled:
+This repository contains the full implementation of my research project. This study simulates evolutionary scenarios using coalescent models and analyzes genomic data to distinguish between two major causes of gene tree discordance: **introgression** and **incomplete lineage sorting (ILS)**. By leveraging two complementary summary statistics, the **D-statistic** and **FST**, the study proposes a robust, joint-metric framework for inference under complex evolutionary histories.
 
-**"Distinguishing Introgression and Incomplete Lineage Sorting in Evolutionary Genetics using D-statistic and FST"**  
-by *Rachael Chew, Minerva University*
+---
 
-This study simulates evolutionary scenarios using coalescent models and analyzes genomic data to distinguish between two major causes of gene tree discordance: **introgression** and **incomplete lineage sorting (ILS)**. By leveraging two complementary summary statistics, the **D-statistic** and **FST**, the study proposes a robust, joint-metric framework for inference under complex evolutionary histories.
+## 📂 Abstract
+
+Incomplete lineage sorting (ILS) and introgression are two major sources of gene tree discordance in evolutionary genomics, yet distinguishing be- tween them remains a central challenge. This study systematically evaluates the performance of two key population genetic statistics—the D-statistic and fixation index (FST)—in differentiating these processes under a range of realistic evolution- ary scenarios. Using coalescent simulations on a four-taxon phylogeny, we vary effective popula- tion sizes, divergence times, migration rates, tim- ing, and directionality of gene flow to generate pure ILS, pure introgression, and mixed conditions. Our results reveal that D-statistics are highly sensitive to directional gene flow but exhibit saturation at high migration rates, while FST remains robust to weak introgression but declines with increased homogenization. Crucially, under intermediate divergence and overlapping ILS-introgression regimes, neither metric alone provides reliable inference. How- ever, their joint distribution captures the nonlinear and complementary behavior of each, substantially improving power to distinguish evolutionary histo- ries. We propose a two-metric inference frame- work and identify parameter regimes where signal detection is most effective. These findings pro- vide theoretical and practical insight for interpret- ing gene tree discordance in empirical systems, particularly those involving rapid radiations or an- cient introgression events.
 
 ---
 

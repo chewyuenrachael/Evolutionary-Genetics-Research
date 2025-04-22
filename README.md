@@ -10,6 +10,31 @@ Incomplete lineage sorting (ILS) and introgression are two major sources of gene
 
 ---
 
+## 🔬 Overview of Project Design
+
+This project explores how to distinguish between introgression and incomplete lineage sorting (ILS)—two processes that create discordant gene trees—by systematically simulating genomic data and analyzing two summary statistics: the **D-statistic** and **FST**.
+
+The study is organized into three main stages:
+
+1. **Simulation of Evolutionary Scenarios**  
+   Using the `msprime` coalescent simulator, we generate synthetic genomic data under a range of conditions, including:
+   - Pure ILS (no migration)
+   - Pure Introgression (migration between non-sister taxa)
+   - Mixed Scenarios (ILS + introgression)
+   - Sliding windows and genome block heterogeneity
+
+2. **Statistical Evaluation**  
+   For each simulation:
+   - We compute the D-statistic and FST across replicates.
+   - We analyze these metrics using both global genome-wide statistics and local sliding window analyses.
+
+3. **Joint Inference Framework**  
+   The results are visualized in Jupyter notebooks, using KDE plots, power curves, and joint metric distributions. By integrating D-statistic and FST behaviors, we identify the conditions where joint analysis outperforms single-metric detection.
+
+This structure enables fine-grained control over evolutionary parameters and results in a robust framework to evaluate metric behavior under controlled, known histories.
+
+---
+
 ## 📂 Project Structure
 
 ```

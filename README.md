@@ -35,6 +35,30 @@ This structure enables fine-grained control over evolutionary parameters and res
 
 ---
 
+## 📈 Results Summary
+
+This study evaluates how two key statistics—**D-statistic** (ABBA-BABA test) and **F<sub>ST</sub>** (fixation index)—perform in detecting introgression and distinguishing it from incomplete lineage sorting (ILS). Key insights include:
+
+- **Under pure ILS**:  
+  - D-statistics are centered around 0, reflecting symmetrical allele sharing.
+  - F<sub>ST</sub> values are variable but do not reliably detect introgression.
+
+- **Under pure introgression**:  
+  - D-statistics increase with stronger and more recent gene flow.
+  - F<sub>ST</sub> decreases between gene-flowing populations due to homogenization.
+
+- **In mixed scenarios (ILS + introgression)**:  
+  - D-statistic and F<sub>ST</sub> show complex, sometimes opposing behavior.
+  - Neither metric alone reliably differentiates weak introgression from deep ILS.
+
+- **Joint analysis outperforms single metrics**:  
+  - KDE plots of D vs. F<sub>ST</sub> reveal separable clusters under moderate migration.
+  - Power analyses show detection accuracy increases when both metrics are used together, particularly in intermediate divergence scenarios.
+
+These findings suggest that a **two-metric inference framework**—integrating D and F<sub>ST</sub>—provides more reliable evolutionary insights than either metric alone, especially in challenging demographic settings like rapid radiation or ancient introgression.
+
+---
+
 ## 📂 Project Structure
 
 ```
